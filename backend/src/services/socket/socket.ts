@@ -1,6 +1,5 @@
-import { Server, Socket } from "socket.io";
+import { Server, Socket, ExtendedError } from "socket.io";
 import { Server as HttpServer } from "http";
-import { ExtendedError } from "socket.io/dist/namespace";
 import { prisma } from "../../lib/prisma";
 import jwt from "jsonwebtoken";
 
