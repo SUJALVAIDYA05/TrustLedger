@@ -145,7 +145,7 @@ export const persistMilestones = async (req: Request, res: Response) => {
   if (project.clientId !== userId) throw new AppError("Access denied", 403);
 
   const sum = milestones.reduce((acc, m) => acc + m.budgetPercent, 0);
-  if (sum !== 100) throw new AppError("Milestone budgetPercent must sum to 100", 422);
+  if (Math.abs(sum - 100) > 0.01) throw new AppError("Milestone budgetPercent must sum to 100", 422);
 
   const totalBudget = new Prisma.Decimal(project.totalBudget);
 
