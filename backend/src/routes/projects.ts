@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { asyncHandler } from "../middleware/asyncHandler";
 import { authenticate, authorizeRole } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import {
@@ -17,19 +16,19 @@ import { createContractSchema, persistMilestonesSchema, signContractSchema } fro
 
 const router = Router();
 
-router.get("/", authenticate, asyncHandler(getMyProjects));
-router.get("/open", authenticate, authorizeRole("FREELANCER"), asyncHandler(getOpenProjects));
-router.get("/:id", authenticate, asyncHandler(getProject));
-router.post("/", authenticate, authorizeRole("CLIENT"), asyncHandler(createProject));
-router.post("/:projectId/apply", authenticate, authorizeRole("FREELANCER"), asyncHandler(applyToProject));
-router.post("/:projectId/link", authenticate, authorizeRole("CLIENT"), asyncHandler(linkFreelancer));
+router.get("/", authenticate, getMyProjects);
+router.get("/open", authenticate, authorizeRole("FREELANCER"), getOpenProjects);
+router.get("/:id", authenticate, getProject);
+router.post("/", authenticate, authorizeRole("CLIENT"), createProject);
+router.post("/:projectId/apply", authenticate, authorizeRole("FREELANCER"), applyToProject);
+router.post("/:projectId/link", authenticate, authorizeRole("CLIENT"), linkFreelancer);
 
 router.post(
   "/:projectId/milestones",
   authenticate,
   authorizeRole("CLIENT"),
   validateBody(persistMilestonesSchema),
-  asyncHandler(persistMilestones)
+  persistMilestones
 );
 
 router.post(
@@ -37,14 +36,14 @@ router.post(
   authenticate,
   authorizeRole("CLIENT"),
   validateBody(createContractSchema),
-  asyncHandler(upsertContract)
+  upsertContract
 );
 
 router.post(
   "/:projectId/sign",
   authenticate,
   validateBody(signContractSchema),
-  asyncHandler(signContract)
+  signContract
 );
 
 export { router as projectRouter };
