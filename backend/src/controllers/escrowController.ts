@@ -121,7 +121,8 @@ export const getLedger = async (req: Request, res: Response) => {
   }
 
   if (!project.escrowWallet) {
-    throw new AppError("Project has no escrow wallet", 404);
+    res.status(200).json({ success: true, data: [] });
+    return;
   }
 
   const ledger = await prisma.walletLedger.findMany({
