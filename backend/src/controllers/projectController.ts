@@ -68,8 +68,12 @@ export const getProject = async (req: Request, res: Response) => {
   });
 
   if (!project) throw new AppError("Project not found", 404);
-  if (project.clientId !== userId && project.freelancerId !== userId) {
-    throw new AppError("Access denied", 403);
+  const isClient = project.clientId === userId;
+  const isAssignedFreelancer = project.freelancerId === userId;
+  if (!isClient && !isAssignedFreelancer) {
+    if (project.freelancerId !== null || req.user!.role !== "FREELANCER") {
+      throw new AppError("Access denied", 403);
+    }
   }
 
   res.status(200).json({ success: true, data: project });
