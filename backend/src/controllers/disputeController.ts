@@ -3,7 +3,6 @@ import { prisma } from "../lib/prisma";
 import { AppError } from "../lib/AppError";
 import { Prisma } from "@prisma/client";
 import { generateDisputeSummary, type DisputeSummary } from "../services/gemini/disputeSummarizer";
-import { processEscrowEvent } from "../services/escrow/walletAgent";
 import { notify } from "../services/notifications/notifier";
 
 /**
@@ -177,38 +176,71 @@ export const resolveDispute = async (req: Request, res: Response) => {
   const freelancerAmount = (amount * freelancerPct) / 100;
   const clientAmount = (amount * clientPct) / 100;
 
-  if (freelancerAmount > 0) {
-    await processEscrowEvent(
-      walletId,
-      "DISPUTE_RESOLVE",
-      freelancerAmount,
-      userId,
-      dispute.milestoneId,
-      `Dispute resolved: ${freelancerPct}% to freelancer`,
-      "RELEASE"
-    );
-  }
-  if (clientAmount > 0) {
-    await processEscrowEvent(
-      walletId,
-      "DISPUTE_RESOLVE",
-      clientAmount,
-      userId,
-      dispute.milestoneId,
-      `Dispute resolved: ${clientPct}% refunded to client`,
-      "REFUND"
-    );
-  }
-
   const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const wallet = await tx.escrowWallet.findUniqueOrThrow({
+      where: { id: walletId },
+    });
+
+    const balance = wallet.totalDeposited.minus(wallet.totalReleased).minus(wallet.totalRefunded);
+
+    if (freelancerAmount > 0) {
+      if (balance.lessThan(freelancerAmount)) {
+        throw new AppError("Insufficient escrow balance to release funds", 422);
+      }
+
+      await tx.walletLedger.create({
+        data: {
+          walletId,
+          entryType: "DISPUTE_RESOLVE",
+          amount: freelancerAmount,
+          direction: "DEBIT",
+          actorId: userId,
+          milestoneId: dispute.milestoneId,
+          memo: `Dispute resolved: ${freelancerPct}% to freelancer`,
+        },
+      });
+
+      await tx.escrowWallet.update({
+        where: { id: walletId },
+        data: { totalReleased: { increment: freelancerAmount } },
+      });
+    }
+
+    if (clientAmount > 0) {
+      if (balance.lessThan(clientAmount)) {
+        throw new AppError("Insufficient escrow balance for refund", 422);
+      }
+
+      await tx.walletLedger.create({
+        data: {
+          walletId,
+          entryType: "DISPUTE_RESOLVE",
+          amount: clientAmount,
+          direction: "DEBIT",
+          actorId: userId,
+          milestoneId: dispute.milestoneId,
+          memo: `Dispute resolved: ${clientPct}% refunded to client`,
+        },
+      });
+
+      await tx.escrowWallet.update({
+        where: { id: walletId },
+        data: { totalRefunded: { increment: clientAmount } },
+      });
+    }
+
     const d = await tx.dispute.update({
       where: { id: disputeId },
       data: { status: "RESOLVED", resolvedAt: new Date() },
     });
-    await tx.milestone.update({
-      where: { id: dispute.milestoneId },
-      data: { status: "FUNDS_RELEASED", approvedAt: new Date() },
-    });
+
+    if (freelancerAmount > 0) {
+      await tx.milestone.update({
+        where: { id: dispute.milestoneId },
+        data: { status: "FUNDS_RELEASED", approvedAt: new Date() },
+      });
+    }
+
     return d;
   });
 

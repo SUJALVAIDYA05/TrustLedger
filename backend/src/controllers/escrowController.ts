@@ -30,7 +30,7 @@ export const depositEscrow = async (req: Request, res: Response) => {
     throw new AppError("You do not have permission to deposit into this escrow", 403);
   }
 
-  if (project.status !== "AWAITING_DEPOSIT" && project.status !== "CONTRACT_REVIEW" && project.status !== "DRAFT") {
+  if (project.status !== "AWAITING_DEPOSIT") {
     throw new AppError("Project is not ready for escrow deposit", 422);
   }
 
@@ -88,7 +88,10 @@ export const depositEscrow = async (req: Request, res: Response) => {
     });
   });
 
-  const newBalance = result!.totalDeposited.minus(result!.totalReleased).toString();
+  const newBalance = result!.totalDeposited
+    .minus(result!.totalReleased)
+    .minus(result!.totalRefunded)
+    .toString();
 
   res.status(201).json({
     success: true,

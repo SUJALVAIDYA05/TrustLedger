@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { processEscrowEvent } from "../services/escrow/walletAgent";
 import { AppError } from "../lib/AppError";
 import { notify } from "../services/notifications/notifier";
 
@@ -110,33 +110,49 @@ export const approveMilestone = async (req: Request, res: Response) => {
     throw new AppError("Unauthorized action", 403);
   }
 
-  if (milestone.status !== "UNDER_REVIEW" && milestone.status !== "SUBMITTED") {
+  if (milestone.status !== "UNDER_REVIEW") {
     throw new AppError(`Cannot approve milestone in ${milestone.status} state`, 422);
   }
 
   const walletId = milestone.project.escrowWallet?.id;
   if (!walletId) throw new AppError("Project has no funded escrow wallet", 422);
 
-  // Optimistic locking: use a transaction to ensure atomicity
-  const result = await prisma.$transaction(async (tx) => {
-    // Re-fetch with lock to prevent race condition
+  // Single transaction: escrow ledger write + wallet update + milestone update
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const lockedMilestone = await tx.milestone.findUnique({
       where: { id },
       select: { status: true, amount: true },
     });
 
-    if (!lockedMilestone || (lockedMilestone.status !== "UNDER_REVIEW" && lockedMilestone.status !== "SUBMITTED")) {
+    if (!lockedMilestone || lockedMilestone.status !== "UNDER_REVIEW") {
       throw new AppError("Milestone was already processed by another request", 409);
     }
 
-    await processEscrowEvent(
-      walletId,
-      "RELEASE",
-      Number(lockedMilestone.amount),
-      req.user!.userId,
-      id,
-      "Payment release for milestone approval"
-    );
+    const wallet = await tx.escrowWallet.findUniqueOrThrow({
+      where: { id: walletId },
+    });
+
+    const balance = wallet.totalDeposited.minus(wallet.totalReleased).minus(wallet.totalRefunded);
+    if (balance.lessThan(Number(lockedMilestone.amount))) {
+      throw new AppError("Insufficient escrow balance to release funds", 422);
+    }
+
+    await tx.walletLedger.create({
+      data: {
+        walletId,
+        entryType: "RELEASE",
+        amount: Number(lockedMilestone.amount),
+        direction: "DEBIT",
+        actorId: req.user!.userId,
+        milestoneId: id,
+        memo: "Payment release for milestone approval",
+      },
+    });
+
+    await tx.escrowWallet.update({
+      where: { id: walletId },
+      data: { totalReleased: { increment: Number(lockedMilestone.amount) } },
+    });
 
     return tx.milestone.update({
       where: { id },

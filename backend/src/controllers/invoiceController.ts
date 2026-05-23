@@ -17,6 +17,11 @@ export const createInvoice = async (req: Request, res: Response) => {
 
   if (!project) throw new AppError("Project not found", 404);
 
+  const userId = req.user!.userId;
+  if (project.clientId !== userId && project.freelancerId !== userId) {
+    throw new AppError("Access denied", 403);
+  }
+
   const allReleased = project.milestones.every((m) => m.status === "FUNDS_RELEASED");
   if (!allReleased) {
     throw new AppError("Cannot generate invoice until all milestones are released", 422);
