@@ -1,9 +1,10 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../lib/AppError";
 import { Prisma } from "@prisma/client";
+import { asyncHandler } from "../middleware/asyncHandler";
 
-export const getOpenProjects = async (req: Request, res: Response) => {
+export const getOpenProjects = asyncHandler(async (req: Request, res: Response) => {
   const projects = await prisma.project.findMany({
     where: {
       freelancerId: null,
@@ -13,9 +14,9 @@ export const getOpenProjects = async (req: Request, res: Response) => {
     orderBy: { createdAt: "desc" },
   });
   res.status(200).json({ success: true, data: projects });
-};
+});
 
-export const applyToProject = async (req: Request, res: Response) => {
+export const applyToProject = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const userId = req.user!.userId;
   const role = req.user!.role;
@@ -43,9 +44,9 @@ export const applyToProject = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: updated });
-};
+});
 
-export const getMyProjects = async (req: Request, res: Response) => {
+export const getMyProjects = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const role = req.user!.role;
 
@@ -54,11 +55,10 @@ export const getMyProjects = async (req: Request, res: Response) => {
     include: { milestones: true, escrowWallet: true },
     orderBy: { createdAt: "desc" },
   });
-
   res.status(200).json({ success: true, data: projects });
-};
+});
 
-export const getProject = async (req: Request, res: Response) => {
+export const getProject = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const userId = req.user!.userId;
 
@@ -77,9 +77,9 @@ export const getProject = async (req: Request, res: Response) => {
   }
 
   res.status(200).json({ success: true, data: project });
-};
+});
 
-export const createProject = async (req: Request, res: Response) => {
+export const createProject = asyncHandler(async (req: Request, res: Response) => {
   const { title, description, totalBudget, deadline } = req.body;
   const userId = req.user!.userId;
   const role = req.user!.role;
@@ -98,7 +98,7 @@ export const createProject = async (req: Request, res: Response) => {
   });
 
   res.status(201).json({ success: true, data: project });
-};
+});
 
 export const linkFreelancer = async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
 import { useState, useMemo, useEffect } from "react";
 
@@ -199,6 +199,20 @@ function App() {
   const markRead = useMarkNotificationRead();
   const [showNotifs, setShowNotifs] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Handle SPA-friendly unauthorized redirect from axios interceptor
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      useAuthStore.getState().logout();
+      navigate("/login");
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
+  }, [navigate]);
 
   return (
     <Router>

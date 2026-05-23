@@ -20,9 +20,9 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Clear auth state and redirect to login
+      // Clear auth state and emit custom event for SPA-friendly redirect
       useAuthStore.getState().logout();
-      window.location.href = "/login";
+      window.dispatchEvent(new Event("auth:unauthorized"));
     }
     return Promise.reject(error);
   }
