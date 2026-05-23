@@ -47,4 +47,5 @@ export interface Project {
   escrowWallet?: EscrowWallet | null;
   client?: { displayName: string; upiHandle?: string | null } | null;
   freelancer?: { displayName: string; upiHandle?: string | null } | null;
+  contract?: { id: string } | null;
 }

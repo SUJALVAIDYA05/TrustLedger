@@ -64,7 +64,7 @@ export const getProject = async (req: Request, res: Response) => {
 
   const project = await prisma.project.findUnique({
     where: { id },
-    include: { milestones: { orderBy: { sequenceOrder: "asc" } }, escrowWallet: true, client: true, freelancer: true },
+    include: { milestones: { orderBy: { sequenceOrder: "asc" } }, escrowWallet: true, client: true, freelancer: true, contract: true },
   });
 
   if (!project) throw new AppError("Project not found", 404);

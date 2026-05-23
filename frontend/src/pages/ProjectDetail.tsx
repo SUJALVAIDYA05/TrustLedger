@@ -165,7 +165,7 @@ export default function ProjectDetail() {
         </div>
 
         <div className="col-span-1 lg:col-span-4 space-y-4">
-          {(project.status === "CONTRACT_REVIEW" || project.status === "AWAITING_DEPOSIT") && (
+          {(project.status === "CONTRACT_REVIEW" || project.status === "AWAITING_DEPOSIT") && project.contract && (
             <Card className="p-5 border border-amber-200 bg-amber-50/50">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
