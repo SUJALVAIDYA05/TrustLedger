@@ -211,22 +211,33 @@ export const signContract = async (req: Request, res: Response) => {
 
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    include: { contract: { include: { signatures: true } }, escrowWallet: true },
+    include: { contract: { include: { signatures: true } }, escrowWallet: true, milestones: true },
   });
   if (!project) throw new AppError("Project not found", 404);
   if (project.clientId !== userId && project.freelancerId !== userId) {
     throw new AppError("Access denied", 403);
   }
-  if (!project.contract) throw new AppError("Contract not created", 422);
+
+  let contractId = project.contract?.id;
+  if (!contractId) {
+    const clauses = project.milestones.map((m) => ({
+      title: m.title,
+      body: `Complete ${m.title}. Verification criteria: ${m.verificationCriteria || "Client approval"} for ${m.amount}.`,
+    }));
+    const created = await prisma.contract.create({
+      data: { projectId, clauses },
+    });
+    contractId = created.id;
+  }
 
   await prisma.contractSignature.upsert({
-    where: { contractId_userId: { contractId: project.contract.id, userId } },
-    create: { contractId: project.contract.id, userId, ipHash },
-    update: { ipHash }, // prototype: allow re-sign to update hash
+    where: { contractId_userId: { contractId, userId } },
+    create: { contractId, userId, ipHash },
+    update: { ipHash },
   });
 
   const sigs = await prisma.contractSignature.findMany({
-    where: { contractId: project.contract.id },
+    where: { contractId },
     select: { userId: true },
   });
 
