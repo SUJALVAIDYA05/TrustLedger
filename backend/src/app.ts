@@ -15,7 +15,21 @@ import { prisma } from "./lib/prisma";
 export const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL?.replace(/\/$/, "") || "*" }));
+const allowedOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((s) => s.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.length === 0) return callback(null, true);
+      if (allowedOrigins.some((o) => origin === o)) return callback(null, true);
+      if (origin.endsWith(".vercel.app")) return callback(null, true);
+      callback(null, false);
+    },
+  })
+);
 app.use(express.json({ limit: "10kb" }));
 
 app.get("/api/health", async (req, res, next) => {
