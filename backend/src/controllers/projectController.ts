@@ -100,7 +100,7 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
   res.status(201).json({ success: true, data: project });
 });
 
-export const linkFreelancer = async (req: Request, res: Response) => {
+export const linkFreelancer = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const { email } = req.body;
 
@@ -118,13 +118,13 @@ export const linkFreelancer = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: project });
-};
+});
 
 /**
  * Persist AI-generated milestones to the project.
  * Side effects: overwrites existing milestones for the project (prototype behavior).
  */
-export const persistMilestones = async (req: Request, res: Response) => {
+export const persistMilestones = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const userId = req.user!.userId;
   const { milestones } = req.body as {
@@ -181,12 +181,12 @@ export const persistMilestones = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: updated.project });
-};
+});
 
 /**
  * Create or replace the cached contract clauses for a project.
  */
-export const upsertContract = async (req: Request, res: Response) => {
+export const upsertContract = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const userId = req.user!.userId;
   const { clauses } = req.body as { clauses: { title: string; body: string }[] };
@@ -202,13 +202,13 @@ export const upsertContract = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: contract });
-};
+});
 
 /**
  * Sign a contract for the project as the current user.
  * When both parties have signed, project moves to AWAITING_DEPOSIT.
  */
-export const signContract = async (req: Request, res: Response) => {
+export const signContract = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const userId = req.user!.userId;
   const { ipHash } = req.body as { ipHash: string };
@@ -264,4 +264,4 @@ export const signContract = async (req: Request, res: Response) => {
         });
 
   res.status(200).json({ success: true, data: updatedProject });
-};
+});
