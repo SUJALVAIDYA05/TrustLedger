@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { asyncHandler } from "../middleware/asyncHandler";
 import { authenticate, authorizeRole } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { submitMilestoneSchema } from "../types/schemas";
@@ -13,7 +12,7 @@ router.post(
   authenticate,
   authorizeRole("FREELANCER"),
   validateBody(submitMilestoneSchema),
-  asyncHandler(submitMilestone)
+  submitMilestone
 );
 
 // Review triggered implicitly initially, or manually by client
@@ -21,7 +20,7 @@ router.post(
   "/:id/review",
   authenticate,
   authorizeRole("CLIENT"),
-  asyncHandler(reviewMilestone)
+  reviewMilestone
 );
 
 // Release triggers processEscrowEvent automatically
@@ -29,7 +28,7 @@ router.post(
   "/:id/release",
   authenticate,
   authorizeRole("CLIENT"),
-  asyncHandler(approveMilestone)
+  approveMilestone
 );
 
 export { router as milestoneRouter };

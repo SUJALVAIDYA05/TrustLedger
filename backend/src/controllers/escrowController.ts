@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../lib/AppError";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 /**
  * Deposits funds into the escrow wallet for a project and locks funds per milestone.
@@ -12,7 +13,7 @@ import { AppError } from "../lib/AppError";
  * @throws {AppError} 403 if not the project client
  * @throws {AppError} 422 if project status doesn't allow deposits or has no milestones
  */
-export const depositEscrow = async (req: Request, res: Response) => {
+export const depositEscrow = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const { amount } = req.body;
   const userId = req.user!.userId;
@@ -97,7 +98,7 @@ export const depositEscrow = async (req: Request, res: Response) => {
     success: true,
     data: { newBalance },
   });
-};
+});
 
 /**
  * Retrieves the wallet ledger entries for a project's escrow wallet.
@@ -106,7 +107,7 @@ export const depositEscrow = async (req: Request, res: Response) => {
  * @throws {AppError} 404 if project or wallet not found
  * @throws {AppError} 403 if user is not part of the project
  */
-export const getLedger = async (req: Request, res: Response) => {
+export const getLedger = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const userId = req.user!.userId;
 
@@ -135,4 +136,4 @@ export const getLedger = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: ledger });
-};
+});

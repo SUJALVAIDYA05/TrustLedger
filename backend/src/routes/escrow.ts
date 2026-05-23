@@ -2,7 +2,6 @@ import { Router } from "express";
 import { depositEscrow, getLedger } from "../controllers/escrowController";
 import { validateBody } from "../middleware/validate";
 import { authenticate, authorizeRole } from "../middleware/auth";
-import { asyncHandler } from "../middleware/asyncHandler";
 import { depositSchema } from "../types/schemas";
 
 const router = Router({ mergeParams: true });
@@ -12,13 +11,13 @@ router.post(
   authenticate,
   authorizeRole("CLIENT"),
   validateBody(depositSchema),
-  asyncHandler(depositEscrow)
+  depositEscrow
 );
 
 router.get(
   "/:projectId/ledger",
   authenticate,
-  asyncHandler(getLedger)
+  getLedger
 );
 
 export { router as escrowRouter };

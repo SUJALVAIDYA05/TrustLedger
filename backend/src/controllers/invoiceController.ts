@@ -2,8 +2,9 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { generateInvoicePdf } from "../services/invoice/generator";
 import { AppError } from "../lib/AppError";
+import { asyncHandler } from "../middleware/asyncHandler";
 
-export const createInvoice = async (req: Request, res: Response) => {
+export const createInvoice = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
 
   const project = await prisma.project.findUnique({
@@ -56,9 +57,9 @@ export const createInvoice = async (req: Request, res: Response) => {
     success: true,
     data: { invoice, pdfPayload: invoicePdfBase64 },
   });
-};
+});
 
-export const getInvoice = async (req: Request, res: Response) => {
+export const getInvoice = asyncHandler(async (req: Request, res: Response) => {
   const projectId = req.params.projectId as string;
   const userId = req.user!.userId;
 
@@ -73,4 +74,4 @@ export const getInvoice = async (req: Request, res: Response) => {
   if (!invoice) throw new AppError("Invoice not found", 404);
 
   res.status(200).json({ success: true, data: invoice });
-};
+});

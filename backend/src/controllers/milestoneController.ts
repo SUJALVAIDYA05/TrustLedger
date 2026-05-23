@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../lib/AppError";
 import { notify } from "../services/notifications/notifier";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 /**
  * Submits a milestone for review after freelancer completes the work.
@@ -13,7 +14,7 @@ import { notify } from "../services/notifications/notifier";
  * @throws {AppError} 403 if not the assigned freelancer
  * @throws {AppError} 422 if milestone is not in PENDING state
  */
-export const submitMilestone = async (req: Request, res: Response) => {
+export const submitMilestone = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const { url } = req.body;
 
@@ -50,7 +51,7 @@ export const submitMilestone = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: updated });
-};
+});
 
 /**
  * Moves a submitted milestone to under review state.
@@ -61,7 +62,7 @@ export const submitMilestone = async (req: Request, res: Response) => {
  * @throws {AppError} 403 if not the project client
  * @throws {AppError} 422 if milestone is not in SUBMITTED state
  */
-export const reviewMilestone = async (req: Request, res: Response) => {
+export const reviewMilestone = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
 
   const milestone = await prisma.milestone.findUnique({
@@ -85,7 +86,7 @@ export const reviewMilestone = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: updated });
-};
+});
 
 /**
  * Approves a milestone and releases escrow funds to the freelancer.
@@ -96,7 +97,7 @@ export const reviewMilestone = async (req: Request, res: Response) => {
  * @throws {AppError} 403 if not the project client
  * @throws {AppError} 422 if milestone status doesn't allow approval or wallet missing
  */
-export const approveMilestone = async (req: Request, res: Response) => {
+export const approveMilestone = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
 
   const milestone = await prisma.milestone.findUnique({
@@ -227,4 +228,4 @@ export const approveMilestone = async (req: Request, res: Response) => {
   }).catch((err) => console.error("Failed to send notification:", err));
 
   res.status(200).json({ success: true, data: result });
-};
+});

@@ -4,6 +4,7 @@ import { AppError } from "../lib/AppError";
 import { Prisma } from "@prisma/client";
 import { generateDisputeSummary, type DisputeSummary } from "../services/gemini/disputeSummarizer";
 import { notify } from "../services/notifications/notifier";
+import { asyncHandler } from "../middleware/asyncHandler";
 
 /**
  * Raises a dispute on a milestone. Both freelancer and client can raise disputes.
@@ -14,7 +15,7 @@ import { notify } from "../services/notifications/notifier";
  * @throws {AppError} 403 if user is not part of the project
  * @throws {AppError} 422 if milestone already has released funds
  */
-export const raiseDispute = async (req: Request, res: Response) => {
+export const raiseDispute = asyncHandler(async (req: Request, res: Response) => {
   const { projectId, milestoneId, reason } = req.body as { projectId?: string; milestoneId?: string; reason?: string };
   
   if (!projectId || !milestoneId || !reason) {
@@ -69,7 +70,7 @@ export const raiseDispute = async (req: Request, res: Response) => {
   }
 
   res.status(201).json({ success: true, data: dispute });
-};
+});
 
 /**
  * Retrieves a single dispute with all messages.
@@ -78,7 +79,7 @@ export const raiseDispute = async (req: Request, res: Response) => {
  * @throws {AppError} 404 if dispute not found
  * @throws {AppError} 403 if user is not part of the project
  */
-export const getDispute = async (req: Request, res: Response) => {
+export const getDispute = asyncHandler(async (req: Request, res: Response) => {
   const disputeId = req.params.id as string;
   const userId = req.user!.userId;
 
@@ -96,7 +97,7 @@ export const getDispute = async (req: Request, res: Response) => {
   }
 
   res.status(200).json({ success: true, data: dispute });
-};
+});
 
 /**
  * Generates an AI-mediated summary of the dispute chat and proposes a resolution.
@@ -106,7 +107,7 @@ export const getDispute = async (req: Request, res: Response) => {
  * @throws {AppError} 403 if user is not part of the project
  * @throws {AppError} 422 if no messages exist to summarize
  */
-export const generateAiSummary = async (req: Request, res: Response) => {
+export const generateAiSummary = asyncHandler(async (req: Request, res: Response) => {
   const disputeId = req.params.id as string;
   const userId = req.user!.userId;
 
@@ -141,7 +142,7 @@ export const generateAiSummary = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ success: true, data: updated });
-};
+});
 
 /**
  * Resolves a dispute by splitting the milestone funds between freelancer and client.
@@ -152,7 +153,7 @@ export const generateAiSummary = async (req: Request, res: Response) => {
  * @throws {AppError} 403 if user is not part of the project
  * @throws {AppError} 422 if dispute already resolved
  */
-export const resolveDispute = async (req: Request, res: Response) => {
+export const resolveDispute = asyncHandler(async (req: Request, res: Response) => {
   const disputeId = req.params.id as string;
   const userId = req.user!.userId;
   const { freelancerPct, clientPct } = req.body as { freelancerPct: number; clientPct: number };
@@ -264,4 +265,4 @@ export const resolveDispute = async (req: Request, res: Response) => {
   }
 
   res.status(200).json({ success: true, data: updated });
-};
+});
