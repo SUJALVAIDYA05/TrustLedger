@@ -124,8 +124,12 @@ export default function CreateProjectWizard() {
     setStepError(null);
     try {
       const pid = await ensureProject();
-      await signContract.mutateAsync({ projectId: pid, ipHash: crypto.randomUUID().replace(/-/g, "") });
-      setStep(4);
+      const updated = await signContract.mutateAsync({ projectId: pid, ipHash: crypto.randomUUID().replace(/-/g, "") });
+      if (updated.status === "AWAITING_DEPOSIT") {
+        setStep(4);
+      } else {
+        navigate(`/projects/${pid}`);
+      }
     } catch (e: any) {
       setStepError(e?.response?.data?.error || "Failed to sign contract");
     }
@@ -153,6 +157,12 @@ export default function CreateProjectWizard() {
           );
         });
         setProjectId(pid);
+      }
+      
+      const { data: proj } = await apiClient.get<{ data: { status: string } }>(`/projects/${pid}`);
+      if (proj.data.status !== "AWAITING_DEPOSIT") {
+        navigate(`/projects/${pid}`);
+        return;
       }
       
       setIsDepositing(true);
