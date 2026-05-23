@@ -16,7 +16,7 @@ export const loginSchema = z.object({
 
 // --- Escrow Schemas ---
 export const depositSchema = z.object({
-  amount: z.number().positive(),
+  amount: z.coerce.number().positive(),
 });
 
 // --- Milestone Schemas ---

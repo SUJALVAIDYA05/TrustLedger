@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button, Card, Badge } from "../components/ui/core";
+import { Button, Card, Badge, Alert } from "../components/ui/core";
 import { SubmitMilestoneModal } from "../components/SubmitMilestoneModal/SubmitMilestoneModal";
 import { useAuthStore } from "../stores/authStore";
 import { useApproveMilestone, useReviewMilestone, useSubmitMilestone } from "../api/useMilestones";
@@ -181,20 +181,37 @@ export default function ProjectDetail() {
               <p className="text-sm text-gray-600 mb-4">
                 Both parties must sign before escrow can be deposited.
               </p>
+              {signContract.error && (
+                <Alert variant="danger" title="Signing failed">
+                  {(signContract.error as any)?.response?.data?.error || signContract.error.message || "Please try again"}
+                </Alert>
+              )}
               <Button
                 variant="primary"
                 className="w-full shadow-md"
+                disabled={signContract.isPending}
                 onClick={() =>
                   signContract.mutate(
-                    { projectId: id!, ipHash: crypto.randomUUID().replace(/-/g, "") },
-                    { onSuccess: () => {} }
+                    { projectId: id!, ipHash: crypto.randomUUID().replace(/-/g, "") }
                   )
                 }
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-                Sign Contract
+                {signContract.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Signing...
+                  </span>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Sign Contract
+                  </>
+                )}
               </Button>
             </Card>
           )}
@@ -231,6 +248,11 @@ export default function ProjectDetail() {
             </div>
             {isClient && (
               <div className="mt-5 space-y-2">
+                {depositEscrow.error && (
+                  <Alert variant="danger" title="Deposit failed">
+                    {(depositEscrow.error as any)?.response?.data?.error || depositEscrow.error.message || "Please try again"}
+                  </Alert>
+                )}
                 <Button
                   onClick={() => depositEscrow.mutate(Number(project.totalBudget))}
                   variant="success"
