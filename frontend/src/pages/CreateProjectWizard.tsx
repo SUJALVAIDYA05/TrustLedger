@@ -18,6 +18,13 @@ import { apiClient } from "../api/client";
 
 const STEPS = ["Describe", "AI Scope", "Contract", "Deposit"];
 
+const generateIpHash = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+  return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+};
+
 const defaultMilestones: EditableMilestone[] = [
   { title: "Milestone 1", description: "First milestone deliverable", budgetPercent: 30, estimatedDays: 3, verificationCriteria: "Client approval" },
   { title: "Milestone 2", description: "Second milestone deliverable", budgetPercent: 50, estimatedDays: 5, verificationCriteria: "Client approval" },
@@ -124,7 +131,7 @@ export default function CreateProjectWizard() {
     setStepError(null);
     try {
       const pid = await ensureProject();
-      const updated = await signContract.mutateAsync({ projectId: pid, ipHash: crypto.randomUUID().replace(/-/g, "") });
+      const updated = await signContract.mutateAsync({ projectId: pid, ipHash: generateIpHash() });
       if (updated.status === "AWAITING_DEPOSIT") {
         setStep(4);
       } else {

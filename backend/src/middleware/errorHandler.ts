@@ -21,6 +21,7 @@ export const errorHandler = (
       field: e.path.join("."),
       message: e.message,
     }));
+    console.error(`[422] ${req.method} ${req.originalUrl}:`, JSON.stringify(fields));
   }
 
   // Prevent leaking stack traces in production

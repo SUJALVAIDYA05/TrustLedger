@@ -8,7 +8,8 @@ export const validateBody = (schema: AnyZodObject) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        next(error); // Caught by global error handler
+        console.error(`[VALIDATION ERROR] ${req.method} ${req.originalUrl}:`, error.errors);
+        next(error);
       } else {
         next(new Error("Unknown validation error"));
       }

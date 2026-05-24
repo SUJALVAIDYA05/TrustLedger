@@ -48,6 +48,13 @@ export default function ProjectDetail() {
   const depositEscrow = useDepositEscrow(id!);
   const signContract = useSignContract();
 
+  const generateIpHash = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID().replace(/-/g, "");
+    }
+    return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+  };
+
   const handleSubmitDeliverable = async (data: { url: string; notes?: string }) => {
     if (!submittingMilestone) return;
     submit(
@@ -184,17 +191,25 @@ export default function ProjectDetail() {
               {signContract.error && (
                 <Alert variant="danger" title="Signing failed">
                   {(signContract.error as any)?.response?.data?.error || signContract.error.message || "Please try again"}
+                  {(signContract.error as any)?.response?.data?.fields && (
+                    <ul className="mt-1 text-xs list-disc list-inside">
+                      {((signContract.error as any)?.response?.data?.fields as { field: string; message: string }[]).map((f, i) => (
+                        <li key={i}>{f.field}: {f.message}</li>
+                      ))}
+                    </ul>
+                  )}
                 </Alert>
               )}
               <Button
                 variant="primary"
                 className="w-full shadow-md"
                 disabled={signContract.isPending}
-                onClick={() =>
+                onClick={() => {
+                  if (!id) return;
                   signContract.mutate(
-                    { projectId: id!, ipHash: crypto.randomUUID().replace(/-/g, "") }
-                  )
-                }
+                    { projectId: id, ipHash: generateIpHash() }
+                  );
+                }}
               >
                 {signContract.isPending ? (
                   <span className="flex items-center gap-2">
