@@ -38,6 +38,7 @@ export default function ProjectDetail() {
     verificationCriteria: string;
   } | null>(null);
   const [showLedger, setShowLedger] = useState(false);
+  const [milestoneErrors, setMilestoneErrors] = useState<Record<string, string>>({});
 
   const isClient = user?.role === "CLIENT";
 
@@ -140,13 +141,49 @@ export default function ProjectDetail() {
                             </svg>
                             Dispute
                           </Button>
-                          <Button size="sm" variant="success" onClick={() => approve(m.id)}>
-                            Release ₹{Number(m.amount).toLocaleString()}
+                          <Button
+                            size="sm"
+                            variant="success"
+                            onClick={() =>
+                              review(m.id, {
+                                onError: (err: any) =>
+                                  setMilestoneErrors((prev) => ({
+                                    ...prev,
+                                    [m.id]: err?.response?.data?.error || err.message || "Review failed",
+                                  })),
+                                onSuccess: () =>
+                                  setMilestoneErrors((prev) => {
+                                    const copy = { ...prev };
+                                    delete copy[m.id];
+                                    return copy;
+                                  }),
+                              })
+                            }
+                          >
+                            Review & Approve
                           </Button>
                         </>
                       )}
                       {isClient && m.status === "UNDER_REVIEW" && (
-                        <Button size="sm" variant="success" onClick={() => approve(m.id)}>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          onClick={() =>
+                            approve(m.id, {
+                              onError: (err: any) =>
+                                setMilestoneErrors((prev) => ({
+                                  ...prev,
+                                  [m.id]: err?.response?.data?.error || err.message || "Release failed",
+                                })),
+                              onSuccess: () =>
+                                setMilestoneErrors((prev) => {
+                                  const copy = { ...prev };
+                                  delete copy[m.id];
+                                  return copy;
+                                }),
+                            })
+                          }
+                        >
                           Release ₹{Number(m.amount).toLocaleString()}
                         </Button>
                       )}
@@ -165,6 +202,13 @@ export default function ProjectDetail() {
                       )}
                     </div>
                   </div>
+                  {milestoneErrors[m.id] && (
+                    <div className="mt-3">
+                      <Alert variant="danger" title="Action failed" onDismiss={() => setMilestoneErrors((prev) => { const copy = { ...prev }; delete copy[m.id]; return copy; })} dismissible>
+                        {milestoneErrors[m.id]}
+                      </Alert>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
