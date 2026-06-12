@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
 import { useState, useMemo, useEffect } from "react";
 
@@ -215,7 +215,7 @@ function App() {
   }, [navigate]);
 
   return (
-    <Router>
+    <>
       <div className="min-h-screen flex flex-col">
         {/* Desktop Navigation */}
         <nav className="hidden lg:block border-b border-secondary-100 bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
@@ -438,7 +438,7 @@ function App() {
           </Routes>
         </main>
       </div>
-    </Router>
+    </>
   );
 }
 
