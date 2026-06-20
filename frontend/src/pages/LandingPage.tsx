@@ -209,7 +209,7 @@ export default function LandingPage() {
             variant="primary"
             size="lg"
             onClick={() => navigate("/register")}
-            className="bg-white text-secondary-900 hover:bg-secondary-100"
+            className="bg-white text-black hover:bg-secondary-100"
           >
             Create free account
           </Button>
